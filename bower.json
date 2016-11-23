@@ -1,0 +1,17 @@
+{
+  "name": "Multivision",
+  "version": "0.0.0",
+  "authors": [
+    "mahen <mahen@gmail.com>"
+  ],
+  "description": "\"Extreme\"",
+  "license": "MIT",
+  "private": "true",
+  "dependencies": {
+    "jquery": "^3.1.1",
+    "AngularJS-Toaster": "toaster#^2.1.0",
+    "angular": "^1.5.8",
+    "angular-resource": "^1.5.8",
+    "angular-route": "^1.5.8"
+  }
+}
