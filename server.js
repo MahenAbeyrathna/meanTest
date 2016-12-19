@@ -1,62 +1,53 @@
 var express = require('express'),
-    stylus = require('stylus'),
-    logger = require('morgan'),
-    bodyParser = require('body-parser'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    passport = require('passport'),
+    localStrategy = require('passport-local').Strategy;
 
-var env =process.env.NODE_ENV= process.env.NODE_ENV || 'development';
-var app= express();
-function compile(str,path){
-    return stylus(str).set('filename',path);
-}
-app.set('views', __dirname + '/server/views');
-app.set('view engine','jade');
-app.use(logger('dev'));
-app.use(bodyParser());
-app.use(stylus.middleware(
-    {
-        src: __dirname +'/public',
-        compile: compile
-    }
-));
-app.use(express.static(__dirname + '/public'));
-//mongoose.Promise = global.Promise;
-if( env != 'development'){
-    mongoose.connect('mongodb://mahen:123@ds163397.mlab.com:63397/meanproject');
-}
-else{
-    mongoose.connect('mongodb://localhost/meanproject');
-}
-//mongoose.set('debug', true);
-var db = mongoose.connection;
-db.on('error',console.error.bind(console,'connection error...'));
-db.once('open',function callback(){
-    console.log('meanproject db opended');
-});
-var messageSchema= mongoose.Schema({message:String});
-var Message = mongoose.model('Message',messageSchema);
-var mongoMessage;
-Message.findOne().exec(function(err,messageDoc){
-    if(messageDoc)
-    {
-        mongoMessage=messageDoc.message;
-        console.log('success:',mongoMessage);
+var env = process.env.NODE_ENV= process.env.NODE_ENV || 'development';
 
+var app = express();
+
+var config = require('./server/config/config')[env];
+
+require('./server/config/express')(app, config);
+
+require('./server/config/mongoose')(config);
+
+require('./server/config/routes')(app);
+
+var User= mongoose.model('User');
+
+passport.use(new localStrategy(
+    function(userName, password, done){
+        User.findOne({userName:userName}).exec(function(err,user){
+            if(user){
+                console.log(33333333);
+                return done(null,user);
+            }
+            else{
+                console.log(4444444);
+                return done(null,false);
+            }
+        });
     }
-    else {
-        console.log('erro:',err);
+    ));
+
+passport.serializeUser(function(user, done){
+    if(user){
+        console.log(11111,user._id);
+        done(null, user._id);
     }
 });
 
-app.get('/partials/:partialPath',function (req,res) {
-    res.render('partials/'+ req.params.partialPath);
-});
-
-app.get('*',function (req,res) {
-    res.render('index',{
-        mongoMessage : mongoMessage
+passport.deserializeUser(function(id, done){
+    User.findOne({_id:id}).exec(function(err,user){
+        if(user){
+            return done(null, user);
+        }
+        else{
+            return done(null, false);
+        }
     });
 });
-var port= process.env.PORT || 3030;
-app.listen(port);
-console.log('Listing to the port'+port+ "...");
+app.listen(config.port);
+console.log('Listing to the port'+config.port+ "...");
